@@ -11,10 +11,12 @@
         <Canvas Margin="0,0,-36,0">
             <Button Content="CreatePdf" Canvas.Left="10" Canvas.Top="45" Click="Button_Merge_Click" Width="139"/>
             <TextBox Canvas.Left="154" Canvas.Top="47" Text="TextBox" Name="filename" TextWrapping="Wrap" Width="286"/>
-            <Button Content="Delete File" Canvas.Left="644" Canvas.Top="46" RenderTransformOrigin="1.564,0.208" Click="Button_Delete_Click" Width="78" Background="#FFE80909"/>
+            <Button Content="Delete files" Canvas.Left="667" Canvas.Top="50" RenderTransformOrigin="1.564,0.208" Click="Button_Delete_Click" Width="78" Background="#FFE80909"/>
             <Button Content="Add Files"  Click="Button_Click" Canvas.Left="10" Canvas.Top="16" Width="139" />
+            <Button Canvas.Left="510" Canvas.Top="11" FontFamily="Marlett" FontSize="20" Content="5" Click="Up_click"/>
+            <Button Canvas.Left="510" Canvas.Top="51"  FontFamily="Marlett" FontSize="20" Content="6" Click="Down_click"/>
         </Canvas>
-        <ListBox Margin="0,76,0,0" Name="FileListBox" ItemsSource="{Binding FileList}">
+        <ListBox Margin="0,76,0,0" Name="FileListBox" ItemsSource="{Binding FileList}"  Drop="ImagePanel_Drop" AllowDrop="true" SelectionMode="Multiple">
             <ListBox.ItemTemplate>
                 <DataTemplate>
                     <StackPanel Orientation="Horizontal">
