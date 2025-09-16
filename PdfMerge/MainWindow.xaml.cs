@@ -15,12 +15,15 @@ namespace PdfMerge
     {
         public List<string> FileList { get; set; }
         public string SaveFolder = @"C:\temp\";
-        private string initialDirectory = @"C:\Users\peter\Pictures\Scans";
+        private string initialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+        
         public MainWindow()
         {
             InitializeComponent();
             FileList = new List<string>();
+            DataContext = this;
         }
+        
         private void Button_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -31,17 +34,24 @@ namespace PdfMerge
                     Filter = "Pdf files (*.pdf)|*.pdf|All files (*.*)|*.*",
                     InitialDirectory = initialDirectory
                 };
+                
                 if (openFileDialog.ShowDialog() == true)
                 {
                     foreach (string filename in openFileDialog.FileNames)
-                        FileList.Add(filename);
+                    {
+                        // Only add PDF files and avoid duplicates
+                        if (Path.GetExtension(filename).ToLower() == ".pdf" && !FileList.Contains(filename))
+                        {
+                            FileList.Add(filename);
+                        }
+                    }
                     initialDirectory = Path.GetDirectoryName(openFileDialog.FileName);
                 }
                 RefeshListbox();
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message);
+                MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -50,26 +60,77 @@ namespace PdfMerge
             FileListBox.ItemsSource = null;
             FileListBox.ItemsSource = FileList;
         }
+        
+        private void ClearFileList()
+        {
+            FileList.Clear();
+            RefeshListbox();
+        }
+        
+        private void Button_Clear_Click(object sender, RoutedEventArgs e)
+        {
+            if (FileList.Count > 0)
+            {
+                var result = MessageBox.Show($"Are you sure you want to clear all {FileList.Count} files from the list?", 
+                                            "Clear All Files", 
+                                            MessageBoxButton.YesNo, 
+                                            MessageBoxImage.Question);
+                if (result == MessageBoxResult.Yes)
+                {
+                    ClearFileList();
+                }
+            }
+            else
+            {
+                MessageBox.Show("The file list is already empty.", "No Files", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
 
         private void Button_Merge_Click(object sender, RoutedEventArgs e)
         {
             try
             {
+                if (FileList.Count == 0)
+                {
+                    MessageBox.Show("Please add some PDF files first.", "No Files", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+                
                 var pathToSave = $@"{SaveFolder}{filename.Text}.pdf";
+                
+                // Ensure temp directory exists
+                Directory.CreateDirectory(SaveFolder);
+                
+                // Show progress message
+                MessageBox.Show($"Merging {FileList.Count} PDF files...\n\nFiles to merge:\n{string.Join("\n", FileList.Select(f => Path.GetFileName(f)))}", 
+                              "Merging PDFs", MessageBoxButton.OK, MessageBoxImage.Information);
+                
                 PdfFunctions.Merge(FileList, pathToSave);
+                
+                MessageBox.Show($"PDF merged successfully!\n\nFiles merged: {FileList.Count}\nSaved to: {pathToSave}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                
+                // Open the folder containing the merged file
                 ProcessStartInfo psi = new ProcessStartInfo("explorer.exe", "/n /e,/select," + pathToSave);
                 Process.Start(psi);
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message);
+                MessageBox.Show($"Error merging PDFs: {ex.Message}\n\nStack trace: {ex.StackTrace}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+        
         private void ImagePanel_Drop(object sender, DragEventArgs e)
         {
             if (e.Data.GetDataPresent(DataFormats.FileDrop))
             {
-                FileList.AddRange(from file in (string[])e.Data.GetData(DataFormats.FileDrop) select file);
+                var files = (string[])e.Data.GetData(DataFormats.FileDrop);
+                foreach (var file in files)
+                {
+                    if (Path.GetExtension(file).ToLower() == ".pdf" && !FileList.Contains(file))
+                    {
+                        FileList.Add(file);
+                    }
+                }
                 RefeshListbox();
             }
         }
@@ -78,15 +139,22 @@ namespace PdfMerge
         {
             try
             {
-                foreach (var file in FileListBox.SelectedItems)
+                if (FileListBox.SelectedItems.Count == 0)
                 {
-                    FileList.Remove((string)file);
+                    MessageBox.Show("Please select files to delete.", "No Selection", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+                
+                var selectedItems = FileListBox.SelectedItems.Cast<string>().ToList();
+                foreach (var file in selectedItems)
+                {
+                    FileList.Remove(file);
                 }
                 RefeshListbox();
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message);
+                MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -96,13 +164,14 @@ namespace PdfMerge
 
             if (selectedIndex > 0 && selectedIndex < FileListBox.Items.Count)
             {
-                var itemToMoveUp = this.FileListBox.Items[selectedIndex];
+                var itemToMoveUp = FileListBox.Items[selectedIndex];
                 FileList.Remove((string)itemToMoveUp);
                 FileList.Insert(selectedIndex - 1, (string)itemToMoveUp);
                 RefeshListbox();
                 FileListBox.SelectedIndex = selectedIndex - 1;
             }
         }
+        
         private void Down_click(object sender, RoutedEventArgs e)
         {
             var selectedIndex = FileListBox.SelectedIndex;
