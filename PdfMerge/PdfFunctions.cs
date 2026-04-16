@@ -2,13 +2,12 @@
 using iText.Kernel.Utils;
 using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace PdfMerge
 {
     class PdfFunctions
     {
-        public static void Merge(List<string> files, String ouputPath)
+        public static void Merge(List<string> files, String outputPath)
         {
             try
             {
@@ -17,28 +16,29 @@ namespace PdfMerge
                     throw new ArgumentException("No files provided for merging");
                 }
 
-                var pdf = new PdfDocument(new PdfWriter(ouputPath));
-                var merger = new PdfMerger(pdf);
-
-                int totalPages = 0;
-                foreach (var file in files)
+                using (var pdf = new PdfDocument(new PdfWriter(outputPath)))
                 {
-                    if (!System.IO.File.Exists(file))
-                    {
-                        throw new System.IO.FileNotFoundException($"File not found: {file}");
-                    }
+                    var merger = new PdfMerger(pdf);
 
-                    var pdfDocument = new PdfDocument(new PdfReader(file));
-                    int pageCount = pdfDocument.GetNumberOfPages();
-                    merger.Merge(pdfDocument, 1, pageCount);
-                    totalPages += pageCount;
-                    pdfDocument.Close();
+                    int totalPages = 0;
+                    foreach (var file in files)
+                    {
+                        if (!System.IO.File.Exists(file))
+                        {
+                            throw new System.IO.FileNotFoundException($"File not found: {file}");
+                        }
+
+                        using (var pdfDocument = new PdfDocument(new PdfReader(file)))
+                        {
+                            int pageCount = pdfDocument.GetNumberOfPages();
+                            merger.Merge(pdfDocument, 1, pageCount);
+                            totalPages += pageCount;
+                        }
+                    }
                 }
 
-                pdf.Close();
-                
                 // Simple verification that the file was created
-                if (!System.IO.File.Exists(ouputPath))
+                if (!System.IO.File.Exists(outputPath))
                 {
                     throw new Exception("Output file was not created");
                 }
