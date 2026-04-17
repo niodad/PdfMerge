@@ -54,7 +54,7 @@
                     BorderThickness="0"
                     FontWeight="SemiBold"/>
             <Button Content="Move Up" 
-                    Click="Up_click" 
+                    Click="UpButton_Click" 
                     Margin="5" 
                     Padding="15,8"
                     Background="#2196F3"
@@ -62,7 +62,7 @@
                     BorderThickness="0"
                     FontWeight="SemiBold"/>
             <Button Content="Move Down" 
-                    Click="Down_click" 
+                    Click="DownButton_Click" 
                     Margin="5" 
                     Padding="15,8"
                     Background="#2196F3"
